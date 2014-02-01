@@ -58,10 +58,22 @@ macro_rules! defstates(
 pub struct StateMachine<'a, T> {
     /// Store the currently selected state
     currentState: T,
-    priv exprs: ~[(T, 'a ||)]
+    exprs: ~[(T, 'a ||)]
 }
 
+/// Establish two generic types parameters: `'a` which defines the lifetime
+/// of the closure/lambda to `.when` methods; and `T` which defines the type
+/// of state object.
 impl<'a, T: Eq> StateMachine<'a, T> {
+
+    /// Creates a new instance of the `StateMachine` struct. We begin
+    /// with an empty set of expressions and an initial state.
+    pub fn new(initialState: T) -> StateMachine<T> {
+        StateMachine { currentState: initialState, exprs: ~[] }
+    }
+
+    /// Transition/switch the current state to another one. This will trigger
+    /// any `.when` expressions that match.
     pub fn switch(&mut self, nextState: T) {
         self.currentState = nextState;
         for expr in self.exprs.iter() {
@@ -75,12 +87,11 @@ impl<'a, T: Eq> StateMachine<'a, T> {
         }
     }
 
+    /// Pass a lambda/closure whenever a specific state is triggered. This is
+    /// typically how and where the logic goes. `'a` defines a named lifetime
+    /// based on the lambda, because lambda's capture their environment.
     pub fn when(&mut self, state: T, func: 'a ||) {
         self.exprs.push((state, func));
-    }
-
-    pub fn new(initialState: T) -> StateMachine<T> {
-        StateMachine { currentState: initialState, exprs: ~[] }
     }
 }
 
@@ -90,13 +101,12 @@ mod test {
 
     #[test]
     fn test_sm_new() {
-
         defstates! (State -> One);
-
         let sm = ::StateMachine::new(State::One);
         assert_eq!(sm.currentState, State::One);
     }
 
+    // FIXME: Replace with the `defstates!` macro.
     #[test]
     fn test_sm_switch() {
 
@@ -116,6 +126,7 @@ mod test {
         assert_eq!(sm.currentState as int, Locked as int);
     }
 
+    // FIXME: Replace with the `defstates!` macro.
     #[test]
     fn test_when() {
 
