@@ -55,27 +55,14 @@ macro_rules! defstates(
 /// A representation of a state machine that holds the current state,
 /// as well as an owned vector of tuple elements. The tuple contains the
 /// state and a lambda, specified with a named lifetime.
-///
-struct StateMachine<'a, T> {
+pub struct StateMachine<'a, T> {
+    /// Store the currently selected state
     currentState: T,
-    exprs: ~[(T, 'a ||)]
+    priv exprs: ~[(T, 'a ||)]
 }
 
-/// Finite State Machine trait that defines a generic type
-/// bound `Eq`. This ensures that we can perform equality operations
-/// on the generic type.
-///
-/// The lifetime is based on the passed lambda. Because the lambda captures
-/// it's outer environment, it must have a specified lifetime, the same
-/// as any captured variables.
-trait FSM<'a, T: Eq> {
-    fn switch(&mut self, nextState: T);
-    fn when(&mut self, state: T, func: 'a ||);
-}
-
-/// Implement FSM for StateMachine
-impl<'a, T: Eq> FSM<'a, T> for StateMachine<'a, T> {
-    fn switch(&mut self, nextState: T) {
+impl<'a, T: Eq> StateMachine<'a, T> {
+    pub fn switch(&mut self, nextState: T) {
         self.currentState = nextState;
         for expr in self.exprs.iter() {
             match *expr {
@@ -88,29 +75,26 @@ impl<'a, T: Eq> FSM<'a, T> for StateMachine<'a, T> {
         }
     }
 
-    fn when(&mut self, state: T, func: 'a ||) {
+    pub fn when(&mut self, state: T, func: 'a ||) {
         self.exprs.push((state, func));
     }
-}
 
-impl<'a, T> StateMachine<'a, T> {
-    fn new(initialState: T) -> StateMachine<T> {
+    pub fn new(initialState: T) -> StateMachine<T> {
         StateMachine { currentState: initialState, exprs: ~[] }
     }
 }
 
 #[cfg(test)]
 mod test {
+
+
     #[test]
     fn test_sm_new() {
 
-        enum State {
-            Unlocked = 0x01,
-            Locked
-        }
+        defstates! (State -> One);
 
-        let sm = StateMachine::new(Unlocked);
-        assert_eq!(sm.currentState as int, Unlocked as int);
+        let sm = ::StateMachine::new(State::One);
+        assert_eq!(sm.currentState, State::One);
     }
 
     #[test]
@@ -127,7 +111,7 @@ mod test {
             }
         }
 
-        let mut sm = StateMachine::new(Unlocked);
+        let mut sm = ::StateMachine::new(Unlocked);
         sm.switch(Locked);
         assert_eq!(sm.currentState as int, Locked as int);
     }
@@ -148,7 +132,7 @@ mod test {
             }
         }
 
-        let mut sm = StateMachine::new(Unlocked);
+        let mut sm = ::StateMachine::new(Unlocked);
         let mut called = false;
 
         sm.when(Locked, || {
