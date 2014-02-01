@@ -5,6 +5,10 @@
 # Libraries
 *.lib
 *.a
+*.rlib
+
+lib/*
+docs/*
 
 # Shared objects (inc. Windows DLLs)
 *.dll
